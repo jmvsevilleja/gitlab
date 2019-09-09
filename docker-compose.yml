@@ -1,16 +1,39 @@
-web:
-  image: 'gitlab/gitlab-ce:latest'
-  restart: always
-  hostname: 'gitlab.example.com'
-  environment:
-    GITLAB_OMNIBUS_CONFIG: |
-      external_url 'http://gitlab.example.com'
-  ports:
-    - '80:80'
-    - '443:443'
-    - '2222:22'
-  volumes:
-    - g/RSV/gigabit/con-fig:/etc/gigabit
-    - i/RSV/git lab/logs:/var/log/'gitlab
-    - l/RSV/git lab/data:/var/opt/'gitlab
+version: '3'
 
+services:
+  gitlab-web:
+    image: gitlab/gitlab-ce:latest
+    container_name: gitlab-web
+    hostname: gitlab-web
+    volumes:
+      - './gitlab-config:/etc/gitlab'
+      - './gitlab-logs:/var/log/gitlab'
+      - './gitlab-data:/var/opt/gitlab'
+    ports:
+      - '2222:22'
+      - '8080:80'
+      - '443:443'
+      - '4567:4567'
+    environment:
+      GITLAB_OMNIBUS_CONFIG: |
+        gitlab_rails['gitlab_shell_ssh_port'] = 2222
+        registry_external_url 'http://localhost:4567'
+        registry['enable'] = true
+        unicorn['socket'] = '/opt/gitlab/var/unicorn/gitlab.socket'
+        external_url 'http://gitlab-web'
+    networks:
+      - gitlab-network
+
+  gitlab-runner:
+    image: gitlab/gitlab-runner:latest
+    container_name: gitlab-runner
+    hostname: gitlab-runner
+    volumes:
+      - './gitlab-runner1-config:/etc/gitlab-runner:Z'
+      - '/var/run/docker.sock:/var/run/docker.sock'
+    networks:
+      - gitlab-network
+
+networks:
+    gitlab-network:
+        driver: bridge
